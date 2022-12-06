@@ -1,4 +1,4 @@
-import { Component, h, Prop, State, Watch } from '@stencil/core';
+import { Component, h, Prop, State } from '@stencil/core';
 
 @Component({
   tag: 'login-component',
@@ -27,7 +27,6 @@ export class LoginComponent {
     }
   }
 
-  @Watch('errorObj')
   onInputBlur(e: any) {
     const { name, value } = e.target;
     var filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -57,7 +56,6 @@ export class LoginComponent {
       [name]: value
     }
   }
-
   onFormSubmit() {
     console.log(this.formData);
   }
@@ -132,7 +130,7 @@ export class LoginComponent {
               <div>
                 {/* click replaced with mousedown and keydown to overcome blur event hiding form submit issue */}
                 <button type="button"
-                  onClick={this.onFormSubmit}
+                  onClick={ ()=>this.onFormSubmit()}
                   class="mtop20 primary-btn">Continue</button>
               </div>
               <div>
