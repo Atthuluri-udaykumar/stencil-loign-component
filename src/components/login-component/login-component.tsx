@@ -1,4 +1,4 @@
-import { Component, h, Prop, State } from '@stencil/core';
+import { Component, h, Prop, State, Watch } from '@stencil/core';
 
 @Component({
   tag: 'login-component',
@@ -10,14 +10,59 @@ export class LoginComponent {
   @Prop() name: string;
   passwordType: string;
 
-  displayPassword(e:any) {
-    console.log('displayPassword', e.target.id)
+  @State() emailValue: string;
+  @State() passwordValue: string;
+  @State() dummyState: boolean = false;
+  @State() errorObj: any = {
+    email: '',
+    password: ''
+  }
+  @State() formData: any = {
+    email: '',
+    password: ''
+  }
+  displayPassword(e: any) {
     if (e.target.id == 'showNewPassword') {
       this.showPassword = e.target.checked;
     }
   }
 
+  @Watch('errorObj')
+  onInputBlur(e: any) {
+    const { name, value } = e.target;
+    var filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (name === 'email') {
+      if (!value) {
+        this.errorObj.email = 'Please enter an email address'
+      } else if (!filter.test(value)) {
+        this.errorObj.email = 'Please enter a valid email address'
+      } else {
+        this.errorObj.email = ''
+      }
+    }
+    if (name === 'password') {
+      if (!value) {
+        this.errorObj.password = 'Please enter a password'
+      } else {
+        this.errorObj.password = ''
+      }
+    }
+    this.dummyState = !this.dummyState;
+  }
+
+  onInputChange(e: any) {
+    const { name, value } = e.target;
+    this.formData = {
+      ...this.formData,
+      [name]: value
+    }
+  }
+
+  onFormSubmit() {
+    console.log(this.formData);
+  }
   render() {
+
     return (
       <div>
 
@@ -30,36 +75,37 @@ export class LoginComponent {
               <div class="mtop10">
                 <label htmlFor="user-detail-email">Email Address</label>
                 <div id="email_desc">Account Holder Only</div>
-                <input type="text" class={'mtop10 ' + (false ? 'hasError' : '')}
-                  value=''
+                <input
+                  type="text"
+                  class={'mtop10 ' + (!!this.errorObj?.email ? 'hasError' : '')}
+                  value={this.formData.email}
                   id="user-detail-email"
+                  name='email'
+                  onChange={(e) => this.onInputChange(e)}
                   // ref={(el) => this.emailRef = el as HTMLInputElement}
-                  // onBlur={(e) => this.validateEmail(e)}
+                  onBlur={(e) => this.onInputBlur(e)}
                   aria-required="true"
                   aria-describedby="email_error"
 
                 ></input>
                 <div id="email_error">
-
-
-                {false &&  <div class="mtop10">
-                    <span class="error-text">error data</span>
+                  {!!this.errorObj?.email && <div class="mtop10">
+                    {/* <img class="error-icon" src="assets/images/i-inline-error.svg" alt="error" /> */}
+                    <span class="error-text">{this.errorObj?.email}</span>
                   </div>}
-                  {/* {(this.formErrors.email && this.errorType.isInvalid && this.emailRef.value !== "") && (
-                      <div class="mtop10">
-                        <img class="error-icon" src="assets/images/i-inline-error.svg" alt="error" />
-                        <span class="error-text">{this.content.error['email_invalid_inline']}</span>
-                      </div>
-                    )} */}
+
                 </div>
               </div>
               {/* PASSWORD SECTION */}
               <div class="mtop5">
                 <label htmlFor="user-detail-newpwd">Password</label>
                 <input type={this.showPassword ? this.passwordType = "text" : this.passwordType = "password"}
-                  class={false ? 'hasError' : ''}
-                  value='' id="user-detail-newpwd"
-
+                  class={!!this.errorObj?.password ? 'hasError' : ''}
+                  id="user-detail-newpwd"
+                  name='password'
+                  value={this.formData.password}
+                  onBlur={(e) => this.onInputBlur(e)}
+                  onChange={(e) => this.onInputChange(e)}
                   onPaste={(e) => { e.preventDefault(); return false; }}
                   onCopy={(e) => { e.preventDefault(); return false; }}
                   aria-required="true"
@@ -72,22 +118,21 @@ export class LoginComponent {
                   <label class="checkboxlabel" htmlFor="showNewPassword">Show password</label>
                 </div>
                 <div id="newpwd_error">
-                  {false && (
+                  {!!this.errorObj?.password && (
                     <div class="mtop10 ptop5">
-                      <img class="error-icon" src="assets/images/i-inline-error.svg" alt="error" />
-                      <span class="error-text">test error message</span>
+                      {/* <img class="error-icon" src="assets/images/i-inline-error.svg" alt="error" /> */}
+                      <span class="error-text">{this.errorObj?.password}</span>
                     </div>
                   )}
-
                 </div>
 
               </div>
-        
+
               {/* FORM SUBMIT & CANCEL BUTTONS */}
               <div>
                 {/* click replaced with mousedown and keydown to overcome blur event hiding form submit issue */}
                 <button type="button"
-
+                  onClick={this.onFormSubmit}
                   class="mtop20 primary-btn">Continue</button>
               </div>
               <div>
