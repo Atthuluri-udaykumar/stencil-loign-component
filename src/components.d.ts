@@ -7,7 +7,7 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 export namespace Components {
     interface LoginComponent {
-        "name": string;
+        "heading": string;
     }
     interface MyComponent {
         /**
@@ -23,6 +23,10 @@ export namespace Components {
          */
         "middle": string;
     }
+}
+export interface LoginComponentCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLLoginComponentElement;
 }
 declare global {
     interface HTMLLoginComponentElement extends Components.LoginComponent, HTMLStencilElement {
@@ -44,7 +48,8 @@ declare global {
 }
 declare namespace LocalJSX {
     interface LoginComponent {
-        "name"?: string;
+        "heading"?: string;
+        "onSingInDetailSubmit"?: (event: LoginComponentCustomEvent<any>) => void;
     }
     interface MyComponent {
         /**

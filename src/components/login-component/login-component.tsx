@@ -1,4 +1,4 @@
-import { Component, h, Prop, State } from '@stencil/core';
+import { Component, EventEmitter, Event,h, Prop, State } from '@stencil/core';
 
 @Component({
   tag: 'login-component',
@@ -7,7 +7,7 @@ import { Component, h, Prop, State } from '@stencil/core';
 })
 export class LoginComponent {
   @State() showPassword = false;
-  @Prop() name: string;
+  @Prop() heading: string;
   passwordType: string;
 
   @State() emailValue: string;
@@ -21,6 +21,9 @@ export class LoginComponent {
     email: '',
     password: ''
   }
+
+  @Event() singInDetailSubmit: EventEmitter<any>;
+  
   displayPassword(e: any) {
     if (e.target.id == 'showNewPassword') {
       this.showPassword = e.target.checked;
@@ -58,6 +61,7 @@ export class LoginComponent {
   }
   onFormSubmit() {
     console.log(this.formData);
+    this.singInDetailSubmit.emit(this.formData)
   }
   render() {
 
@@ -67,7 +71,7 @@ export class LoginComponent {
         <div role="main" class="user-detail-container">
 
           <div class="enterprise-theme-cvs">
-            <h1>Sign In</h1>
+            <h1>{this.heading}</h1>
             <form novalidate>
               {/* EMAIL SECTION */}
               <div class="mtop10">

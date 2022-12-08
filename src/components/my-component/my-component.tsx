@@ -22,10 +22,16 @@ export class MyComponent {
   @Prop() last: string;
 
 
+  singInDetailSubmit(data: any) {
+    alert(JSON.stringify(data))
+    console.log(data);
+
+  }
+
 
   render() {
     return <div>
-      <login-component name="Max"></login-component>
-      </div>;
+      <login-component heading="Sing In" onSingInDetailSubmit={this.singInDetailSubmit}></login-component>
+    </div>;
   }
 }
