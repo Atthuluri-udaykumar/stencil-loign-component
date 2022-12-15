@@ -23,7 +23,6 @@ export class MyComponent {
 
 
   singInDetailSubmit(data: any) {
-    alert(JSON.stringify(data))
     console.log(data);
 
   }

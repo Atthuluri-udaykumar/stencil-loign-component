@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Event,h, Prop, State } from '@stencil/core';
+import { Component, EventEmitter, Event, h, Prop, State } from '@stencil/core';
 
 @Component({
   tag: 'login-component',
@@ -21,9 +21,15 @@ export class LoginComponent {
     email: '',
     password: ''
   }
-
+  @State() errorDetails: { header: any, message: any, links: any, isAccLocked?: boolean } = {
+    header: '',
+    message: '',
+    links: '',
+    isAccLocked: false
+  }
+  @State() showBanner: Boolean = false;
   @Event() singInDetailSubmit: EventEmitter<any>;
-  
+
   displayPassword(e: any) {
     if (e.target.id == 'showNewPassword') {
       this.showPassword = e.target.checked;
@@ -60,15 +66,38 @@ export class LoginComponent {
     }
   }
   onFormSubmit() {
+    let filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!this.formData.email && !this.formData.password) {
+      this.errorDetails.header = 'Please correct the errors';
+      this.errorDetails.message = 'Enter account holders valid email address and password';
+      this.showBanner = true;
+      this.dummyState = !this.dummyState;
+    } else if (!this.formData.email) {
+      this.errorDetails.header = 'Email address is missing';
+      this.errorDetails.message = 'Enter account holders email address';
+      this.showBanner = true;
+      this.dummyState = !this.dummyState;
+    } else if (this.formData.email != "" && !filter.test(this.formData.email)) {
+      this.errorDetails.header = 'Email address is invalid';
+      this.errorDetails.message = "Enter account holder's valid email address";
+      this.showBanner = true;
+      this.dummyState = !this.dummyState;
+    }else{
+      this.showBanner=false
+      this.dummyState = !this.dummyState;
+    }
     console.log(this.formData);
     this.singInDetailSubmit.emit(this.formData)
   }
+
   render() {
 
     return (
       <div>
 
         <div role="main" class="user-detail-container">
+
+          {this.showBanner && <error-banner errorObject={this.errorDetails}></error-banner>}
 
           <div class="enterprise-theme-cvs">
             <h1>{this.heading}</h1>
@@ -134,7 +163,7 @@ export class LoginComponent {
               <div>
                 {/* click replaced with mousedown and keydown to overcome blur event hiding form submit issue */}
                 <button type="button"
-                  onClick={ ()=>this.onFormSubmit()}
+                  onClick={() => this.onFormSubmit()}
                   class="mtop20 primary-btn">Continue</button>
               </div>
               <div>

@@ -6,6 +6,9 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 export namespace Components {
+    interface ErrorBanner {
+        "errorObject": { header: string, message: string, links?: any, isAccLocked?: boolean };
+    }
     interface LoginComponent {
         "heading": string;
     }
@@ -29,6 +32,12 @@ export interface LoginComponentCustomEvent<T> extends CustomEvent<T> {
     target: HTMLLoginComponentElement;
 }
 declare global {
+    interface HTMLErrorBannerElement extends Components.ErrorBanner, HTMLStencilElement {
+    }
+    var HTMLErrorBannerElement: {
+        prototype: HTMLErrorBannerElement;
+        new (): HTMLErrorBannerElement;
+    };
     interface HTMLLoginComponentElement extends Components.LoginComponent, HTMLStencilElement {
     }
     var HTMLLoginComponentElement: {
@@ -42,11 +51,15 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "error-banner": HTMLErrorBannerElement;
         "login-component": HTMLLoginComponentElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
+    interface ErrorBanner {
+        "errorObject"?: { header: string, message: string, links?: any, isAccLocked?: boolean };
+    }
     interface LoginComponent {
         "heading"?: string;
         "onSingInDetailSubmit"?: (event: LoginComponentCustomEvent<any>) => void;
@@ -66,6 +79,7 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "error-banner": ErrorBanner;
         "login-component": LoginComponent;
         "my-component": MyComponent;
     }
@@ -74,6 +88,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "error-banner": LocalJSX.ErrorBanner & JSXBase.HTMLAttributes<HTMLErrorBannerElement>;
             "login-component": LocalJSX.LoginComponent & JSXBase.HTMLAttributes<HTMLLoginComponentElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
