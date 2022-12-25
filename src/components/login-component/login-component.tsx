@@ -30,32 +30,50 @@ export class LoginComponent {
   @State() showBanner: Boolean = false;
   @Event() singInDetailSubmit: EventEmitter<any>;
 
+  @State() emailRef: any;
+  @State() passwordRef:any;
+
   displayPassword(e: any) {
     if (e.target.id == 'showNewPassword') {
       this.showPassword = e.target.checked;
     }
   }
 
-  onInputBlur(e: any) {
-    const { name, value } = e.target;
-    var filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    if (name === 'email') {
-      if (!value) {
-        this.errorObj.email = 'Please enter an email address'
-      } else if (!filter.test(value)) {
-        this.errorObj.email = 'Please enter a valid email address'
+  onEmailBlur(){
+    const filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!this.emailRef.value) {
+        this.errorObj={
+          ...this.errorObj,
+          email:'Please enter an email address'
+        }
+    
+      } else if (!filter.test(this.emailRef.value)) {
+        this.errorObj={
+          ...this.errorObj,
+          email:'Please enter a valid email address'
+        }
+    
       } else {
-        this.errorObj.email = ''
+        this.errorObj={
+          ...this.errorObj,
+          email:''
+        }
       }
-    }
-    if (name === 'password') {
-      if (!value) {
-        this.errorObj.password = 'Please enter a password'
+  }
+
+
+  onPasswordBlur() {
+      if (!this.passwordRef.value) {
+        this.errorObj={
+          ...this.errorObj,
+          password :'Please enter a password'
+        }
       } else {
-        this.errorObj.password = ''
+        this.errorObj={
+          ...this.errorObj,
+          password :''
+        }
       }
-    }
-    this.dummyState = !this.dummyState;
   }
 
   onInputChange(e: any) {
@@ -66,6 +84,8 @@ export class LoginComponent {
     }
   }
   onFormSubmit() {
+    this.onEmailBlur();
+    this.onPasswordBlur();
     let filter = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     if (!this.formData.email && !this.formData.password) {
       this.errorDetails.header = 'Please correct the errors';
@@ -113,10 +133,11 @@ export class LoginComponent {
                   id="user-detail-email"
                   name='email'
                   onChange={(e) => this.onInputChange(e)}
-                  // ref={(el) => this.emailRef = el as HTMLInputElement}
-                  onBlur={(e) => this.onInputBlur(e)}
+                  ref={(el) => this.emailRef = el as HTMLInputElement}
+                  onBlur={() => this.onEmailBlur()}
                   aria-required="true"
                   aria-describedby="email_error"
+                  
 
                 ></input>
                 <div id="email_error">
@@ -135,7 +156,8 @@ export class LoginComponent {
                   id="user-detail-newpwd"
                   name='password'
                   value={this.formData.password}
-                  onBlur={(e) => this.onInputBlur(e)}
+                  ref={(el) => this.passwordRef = el as HTMLInputElement}
+                  onBlur={() => this.onPasswordBlur()}
                   onChange={(e) => this.onInputChange(e)}
                   onPaste={(e) => { e.preventDefault(); return false; }}
                   onCopy={(e) => { e.preventDefault(); return false; }}
@@ -169,11 +191,7 @@ export class LoginComponent {
               <div>
                 <button type="button" class="mtop24 secondary-btn">Cancel</button>
               </div>
-
-
             </form>
-
-
           </div>
         </div>
 
