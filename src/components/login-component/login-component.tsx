@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Event, h, Prop, State } from '@stencil/core';
 import { clientFingerprint, standardReq } from '../../utils/utils';
-
+import * as Jose from "../../assets/vendor/joseEncryption.js"
 @Component({
   tag: 'login-component',
   styleUrl: 'login-component.scss',
@@ -111,25 +111,65 @@ export class LoginComponent {
     this.singInDetailSubmit.emit(this.formData)
 
   }
+  /**
+   * @type: const
+   * @description:  base64 encoded URL RSA public Key
+   */
+  base64EncodedUrlRSAPubKey: {
+    qa: {
+      "kty": "RSA",
+      "n": "t7Xn2memQmkRG8QFX1w0dTbFqDrt2mA2QbX1-VLDKmVBRRhf_38JhzwjwXMLpHb7xQGag3GU2AtoXhHBZpIk7adeUEqhyi4-LXIwBprEaT8Yx4bokUukiaD64Rgmw12NpZ_O8BBpEnn_Y80EAOswyhgNxT4LzUe0U6Wowp2nsNPN6tLZ5hWEv5o0mkdRbuXF5kp33uSCNgq67pWFFGWGHGBm0RyL9I4LDVWcxiPQ7cQp-qtC9UEmob2zwK2kzITKYMcxTAQrMs7nLKOP5Ym8RP2Vw3MByzWK6KGb3ZkhbyCsm-ElblDuRdZeQu-zmgPV2j4qxAZ8gET88icWX9IKOw",
+      "e": "AQAB"
+    }
+    // ,
+    // prod: {
+    //   'kty': 'RSA',
+    //   'n': 't7Xn2memQmkRG8QFX1w0dTbFqDrt2mA2QbX1-VLDKmVBRRhf_38JhzwjwXMLpHb7xQGag3GU2AtoXhHBZpIk7adeUEqhyi4-LXIwBprEaT8Yx4bokUukiaD64Rgmw12NpZ_O8BBpEnn_Y80EAOswyhgNxT4LzUe0U6Wowp2nsNPN6tLZ5hWEv5o0mkdRbuXF5kp33uSCNgq67pWFFGWGHGBm0RyL9I4LDVWcxiPQ7cQp-qtC9UEmob2zwK2kzITKYMcxTAQrMs7nLKOP5Ym8RP2Vw3MByzWK6KGb3ZkhbyCsm-ElblDuRdZeQu-zmgPV2j4qxAZ8gET88icWX9IKOw',
+    //   'e': 'AQAB'
+    // }
+  }
 
-  // encryptPassword(password:any, ephemeralKey:any) {
-  //   const cryptoGrapher = new Jose.WebCryptographer();
-  //   const ephemeralCryptoKey = crypto?.subtle?.importKey('raw', ephemeralKey, 'AES-KW', true, ['wrapKey', 'unwrapKey']);
+  encryptPassword(password: any, ephemeralKey: any) {
+    const cryptoGrapher = new Jose.WebCryptographer();
+    const ephemeralCryptoKey = crypto?.subtle?.importKey('raw', ephemeralKey, 'AES-KW', true, ['wrapKey', 'unwrapKey']);
 
-  //   cryptoGrapher.setKeyEncryptionAlgorithm('A256KW');
-  //   cryptoGrapher.setContentEncryptionAlgorithm('A256CBC-HS512');
+    cryptoGrapher.setKeyEncryptionAlgorithm('A256KW');
+    cryptoGrapher.setContentEncryptionAlgorithm('A256CBC-HS512');
 
-  //   const encrypter = new Jose.JoseJWE.Encrypter(cryptoGrapher, ephemeralCryptoKey);
-  //   return encrypter.encrypt(password);
-  // }
+    const encrypter = new Jose.JoseJWE.Encrypter(cryptoGrapher, ephemeralCryptoKey);
+    return encrypter.encrypt(password);
+  }
 
-  async onRememberMe(event:any) {
+  encryptEphemeralKey(key: any) {
+    const env = /localhost|dev|pt|qa|sit|uat\d*\.caremark.com/.test(window.location.hostname.toLowerCase()) ? "qa" : "prod";
+    //const env = "qa";
+    const publicKeyEnv = env === 'prod' ? 'prod' : 'qa';
+    const cryptoGrapher = new Jose.WebCryptographer();
+    let pk = this.base64EncodedUrlRSAPubKey?.[publicKeyEnv];
+
+    pk = Jose?.Utils?.importRsaPublicKey(pk, 'RSA-OAEP-256');
+    cryptoGrapher.setKeyEncryptionAlgorithm('RSA-OAEP-256');
+    cryptoGrapher.setContentEncryptionAlgorithm('A256CBC-HS512');
+
+    const encrypter = new Jose.JoseJWE.Encrypter(cryptoGrapher, pk);
+    return encrypter.encrypt(key);
+  }
+
+  async onRememberMe(event: any) {
+    const ephemeralKey = new Uint8Array(32);
+    const sharedSecret = crypto?.getRandomValues(ephemeralKey);
+    const base64StringEphKey: any = btoa(String.fromCharCode.apply(null, new Uint8Array(sharedSecret)));
+    const cryptoGrapher = new Jose.WebCryptographer();
+    this.encryptEphemeralKey(base64StringEphKey)
     console.log(event.target.checked);
-    console.log(clientFingerprint());
+    console.log(clientFingerprint(), 'cf');
     const userInfo = await standardReq({
       path: 'users/login',
-      body: JSON.stringify({ name: 'uday' }),
+      body: JSON.stringify({
+        password: this.encryptPassword(this.formData.password, ephemeralKey)
+      }),
       method: 'POST',
+      reqHeaders:{}
     });
     console.log(userInfo);
   }
@@ -205,11 +245,11 @@ export class LoginComponent {
 
               </div>
               <div class="checkbox-container"  >
-                  <input role="checkbox"
-                    type="checkbox" tabindex="0" 
-                    id="showNewPassword" name='reset-password' class="checkbox" onChange={async(e) => await this.onRememberMe(e)} />
-                  <label class="checkboxlabel" htmlFor="showNewPassword">rememberME</label>
-                </div>
+                <input role="checkbox"
+                  type="checkbox" tabindex="0"
+                  id="showNewPassword" name='reset-password' class="checkbox" onChange={async (e) => await this.onRememberMe(e)} />
+                <label class="checkboxlabel" htmlFor="showNewPassword">rememberME</label>
+              </div>
 
               {/* FORM SUBMIT & CANCEL BUTTONS */}
               <div>

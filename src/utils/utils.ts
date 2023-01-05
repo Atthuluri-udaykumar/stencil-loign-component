@@ -5,12 +5,14 @@ export interface IStandardReq {
   method: 'GET' | 'PUT' | 'POST' | 'DELETE';
   body?: string;
   token?: string;
+  reqHeaders?:any;
 }
 
 export const standardReq = async ({
   path,
   method,
   body,
+  reqHeaders={},
   token,
 }: IStandardReq) => {
   const reqPath = `${endpoint}/${path}`;
@@ -18,7 +20,7 @@ export const standardReq = async ({
     'content-type': 'application/json',
   };
   if (token) {
-    headers = { ...headers, authorization: `Token ${token}` };
+    headers = { ...headers,...reqHeaders, authorization: `Token ${token}` };
   }
   try {
     const req = await fetch(reqPath, {
