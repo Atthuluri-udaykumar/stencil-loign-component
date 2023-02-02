@@ -1,0 +1,88 @@
+ onLoginDetailSubmit(event) {
+    this.isLoading = true;
+    this.utagTgService.trigger('login_btn_click');
+    const cryptoGrapher: any = new Jose.WebCryptographer();
+    const ephemeralKey = new Uint8Array(32);
+    const sharedSecret = crypto?.getRandomValues(ephemeralKey);
+    const base64StringEphKey: any = btoa(String.fromCharCode.apply(null, new Uint8Array(sharedSecret)));
+    this.encryptEphemeralKey(base64StringEphKey).then(encryptedEphemeralKey => {
+      this.encryptPassword(event.detail.password, ephemeralKey).then(encryptPassword => {
+        this.encryptPassword(event.detail.email, ephemeralKey).then(
+          encryptUserId => {
+            //let rememberMeFlag= event.detail.rememberMeFlag=='on' ? true : false
+            let data = {
+              sessionKey: encryptedEphemeralKey,
+              password: encryptPassword,
+              browserFingerPrint: clientFingerprint.init(),
+              userEmailAddress: event.detail.rememberMeUserId ? encryptUserId : event.detail.email,
+              rememberMe: event.detail.rememberMeFlag,
+              rememberUserId: event.detail.rememberMeUserId
+
+            }
+            this.authService.onLoginAuthentication(data).subscribe(res => {
+              this.isLoading = false;
+              this.loginAuthResponse = res;
+
+              if (res?.statusCode === '0000') {
+                let mfabind = this.util.getCookie('mfa-bind');
+                let mfaByPassToken = localStorage.getItem('mfaBypassToken');
+                console.log('value of mfa-bind', mfabind);
+                console.log('value of mfabypasstoken', mfaByPassToken);
+                setState({
+                  email: res?.email,
+                  dob: res?.dob,
+                  mfaInitiateObject: res
+                });
+                if (res?.mfaOTPSessionKey) {
+                  this.util.setCookie('mfaOTPSessionKey', res?.mfaOTPSessionKey);
+                }
+
+                if (!data.rememberMe) {
+                  localStorage.removeItem('rememberMe');
+                  localStorage.removeItem('maskedUserId');
+                  localStorage.removeItem('rememberMeToken');
+                } else {
+                  localStorage.setItem('rememberMe', data.rememberMe);
+                  localStorage.setItem('maskedUserId', res.maskUserId);
+                  localStorage.setItem('rememberMeToken', res.rememberMeToken);
+                }
+                if (res?.mfaToken) {
+                  const sub: Subscription = this.authService.getPatientProfileService({ mfaToken: res?.mfaToken }).subscribe(res => {
+                    console.log("response in getPatientProfile method", res); // this is debug console, will be removed after the fix
+                    const statusCode: string = _.get(res, 'statusCode', '9999');
+                    if (statusCode === '0000') {
+                      this.util.setCookiesFromPatientProfile(res);
+                      this.util.redirectToApplication();
+                    } else {
+                      this.handleFailure(res);
+                    }
+                  }, (error: HttpErrorResponse) => {
+                    this.handleFailure(error.error);
+                  });
+                  this.subscriptions.push(sub);
+                } else if (res?.mfaOTPSessionKey) {
+                  this.router.navigateByUrl('mfa-launch');
+                }
+              } else {
+                this.errorObj = {
+                  errorType: ErrorTypes.Error,
+                  errorDisplayObj: ERRORS['backendError']
+                }
+                this.showErrorModal = true;
+                this.utagTgService.trigger('on_error_display', this.errorObj.errorDisplayObj);
+              }
+            }, (err) => {
+              if (navigator && !navigator.onLine) {
+                this.errorObj = {
+                  errorType: ErrorTypes.Error,
+                  errorDisplayObj: ERRORS['internetError']
+                }
+                this.showErrorModal = true;
+                this.utagTgService.trigger('on_error_display', this.errorObj.errorDisplayObj);
+              }
+            });
+          }
+        )
+      })
+    })
+  }
